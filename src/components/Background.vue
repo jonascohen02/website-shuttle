@@ -4,7 +4,7 @@
 
 <script>
 import * as THREE from "three";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
@@ -16,19 +16,29 @@ import {
 const radius = 6371;
 const tiltEarth = 0.41;
 const tiltMoon = (6.68 * 2 * Math.PI) / 360;
-const rotationSpeed = 0.02;
+const rotationSpeed = 0.0005;
 
 const initLon = (-90 * Math.PI) / 180;
 const initLat = (45 * Math.PI) / 180;
 const initAlt = 15000;
 
 var positionCamera = new THREE.Vector3();
-positionCamera.setFromSphericalCoords(initAlt, initLat - 0.001, initLon);
 var sphCam = new THREE.Spherical();
+sphCam.set(initAlt, initLat, initLon);
+positionCamera.setFromSpherical(sphCam);
 
 var positionShuttle = new THREE.Vector3();
-positionShuttle.setFromSphericalCoords(initAlt - 100, initLat, initLon);
 var sphShuttle = new THREE.Spherical();
+sphShuttle.set(initAlt - 100, initLat, initLon);
+positionShuttle.setFromSpherical(sphShuttle);
+
+var positionGroup = new THREE.Vector3();
+var sphGroup = new THREE.Spherical();
+sphGroup.set(6700, initLat, initLon);
+positionGroup.setFromSpherical(sphGroup);
+
+const speed_shuttle = 0.001;
+const speed_rotation_shuttle = 0.01;
 
 const cloudsScale = 1.005;
 const moonScale = 0.23;
@@ -39,14 +49,20 @@ let SCREEN_WIDTH = window.innerWidth;
 
 let camera, controls, scene, renderer;
 let geometry, meshPlanet, meshClouds, meshMoon;
-let shuttle;
+let shuttle, group, camera_pivot, obstacle, shuttleIsTouched;
+
+const radiusObstacle = 5;
+var obstacleSpeed = 5;
+var score = 0;
+var gameJustStarted;
+var timeOutTriggered = false;
+
+var userDidNotSeeRules = true;
 
 const textureLoader = new THREE.TextureLoader();
 
-const clock = new THREE.Clock();
-
 export default {
-  emits: ["background-has-loaded"],
+  emits: ["background-has-loaded", "stop-game"],
   props: {
     isGameEnable: Boolean,
   },
@@ -282,7 +298,10 @@ export default {
         container.value.appendChild(renderer.domElement);
 
         // Controls
-        controls = new OrbitControls(camera, document.getElementById("container"));
+        controls = new OrbitControls(
+          camera,
+          document.getElementById("container")
+        );
 
         window.addEventListener("resize", onWindowResize, false);
       }
@@ -307,85 +326,257 @@ export default {
 
       function render() {
         // rotate the planet and clouds
-        const delta = clock.getDelta();
+        const delta = 1;
 
         meshPlanet.rotation.y += rotationSpeed * delta;
         meshClouds.rotation.y += 1.25 * rotationSpeed * delta;
 
-        // get current location
-        positionCamera = camera.position;
-        // edit the associated spherical vector
-        sphCam.setFromVector3(positionCamera);
-        // edit the theta angle at each frame for faking a movement
-        sphCam.theta += 0.001;
-        // convert and update the variable containing the position
-        positionCamera.setFromSpherical(sphCam);
-        // update cam position
-        camera.position.set(
-          positionCamera.x,
-          positionCamera.y,
-          positionCamera.z
-        );
-
-        // same for shuttle
+        // check if shuttle exists
         if (shuttle) {
-          positionShuttle = shuttle.position;
-          sphShuttle.setFromVector3(positionShuttle);
-          sphShuttle.theta += 0.001;
-          positionShuttle.setFromSpherical(sphShuttle);
-          shuttle.position.set(
-            positionShuttle.x,
-            positionShuttle.y,
-            positionShuttle.z
-          );
-          shuttle.rotation.y += 0.001;
-          shuttle.rotation.z += 0.01;
+          // normal mode (home page)
+          if (!props.isGameEnable) {
+            // get current location
+            positionCamera = camera.position;
+            // edit the associated spherical vector
+            sphCam.setFromVector3(positionCamera);
+            // edit the theta angle at each frame for faking a movement
+            sphCam.theta += speed_shuttle;
+            // convert and update the variable containing the position
+            positionCamera.setFromSpherical(sphCam);
+            // update cam position
+            camera.position.set(
+              positionCamera.x,
+              positionCamera.y,
+              positionCamera.z
+            );
+
+            // orientation shuttle along its long axis
+            shuttle.rotation.z += speed_rotation_shuttle;
+
+            // same for the shuttle
+            positionShuttle = shuttle.position;
+            sphShuttle.setFromVector3(positionShuttle);
+            sphShuttle.theta += speed_shuttle;
+            positionShuttle.setFromSpherical(sphShuttle);
+            shuttle.position.set(
+              positionShuttle.x,
+              positionShuttle.y,
+              positionShuttle.z
+            );
+            shuttle.rotation.y += speed_shuttle;
+
+            // game mode
+          } else {
+            // if in game, update group position
+            positionGroup = group.position;
+            sphGroup.setFromVector3(positionGroup);
+            sphGroup.theta += speed_shuttle;
+            positionGroup.setFromSpherical(sphGroup);
+            group.position.set(
+              positionGroup.x,
+              positionGroup.y,
+              positionGroup.z
+            );
+            group.rotation.y += speed_shuttle;
+
+            // message to explain rules before sending obstacles
+            if (userDidNotSeeRules) {
+              if (!timeOutTriggered) {
+                timeOutTriggered = true;
+                setTimeout(() => {
+                  alert("Stay alive, avoid the meteorites.");
+                  userDidNotSeeRules = false;
+                  timeOutTriggered = false;
+                  createObstacles();
+                }, 3000);
+              }
+            }
+
+            // obstacle can exist only if user saw the rules once
+            if (obstacle) {
+              if (gameJustStarted) {
+                if (!timeOutTriggered) {
+                  timeOutTriggered = true;
+                  setTimeout(() => {
+                    group.add(obstacle);
+                    gameJustStarted = false;
+                    timeOutTriggered = false;
+                    obstacle.position.z = 200;
+                  }, 1000);
+                }
+              } else {
+                // check if intersection with shuttle
+                if (!shuttleIsTouched && Math.abs(obstacle.position.z) < 10) {
+                  let distance = Math.pow(
+                    Math.pow(shuttle.position.x - obstacle.position.x, 2) +
+                      Math.pow(shuttle.position.y - obstacle.position.y, 2),
+                    0.5
+                  );
+
+                  // if distance between shuttle and obstacle's center is less than obstacle's radius, there is impact, stop game
+                  if (distance < 2 * radiusObstacle) {
+                    shuttleIsTouched = true;
+                    group.remove(obstacle);
+                    setTimeout(() => {
+                      emit("stop-game");
+                    }, 2000);
+                  }
+                }
+
+                // put it back at front if behind camera
+                if (obstacle.position.z < -100) {
+                  obstacle.position.z = 200;
+                  obstacle.position.x = 0.5 * getRandomArbitrary(min_x, max_x);
+                  obstacle.position.y = 0.5 * getRandomArbitrary(min_y, max_y);
+                  score++;
+                }
+                // make it come towards the camera
+                obstacle.position.z -= obstacleSpeed;
+                obstacleSpeed += 0.001;
+
+                // make effects if shuttle is touched
+                if (shuttleIsTouched) {
+                  shuttle.rotation.y += 0.1;
+                }
+              }
+            }
+          }
         }
 
         renderer.render(scene, camera);
       }
 
-      // let max_y = 25;
-      // let min_y = -25;
-      // let max_x = 25;
-      // let min_x = -25;
+      let max_y = 50;
+      let min_y = -50;
+      let max_x = 25;
+      let min_x = -25;
 
-      // // game start
-      // watch(
-      //   () => props.isGameEnable,
-      //   () => {
-      //     if (props.isGameEnable) {
-      //       stopRotationShuttle();
-      //       // set shuttle in center and correct orientation
-      //       shuttle.rotation.z = 0;
+      let repositionShuttle = function (e) {
+        shuttle.position.x = -(
+          min_x +
+          (e.pageX / SCREEN_WIDTH) * (max_x - min_x)
+        );
+        shuttle.position.y =
+          max_y - (e.pageY / SCREEN_HEIGHT) * (max_y - min_y);
+      };
 
-      //       // camera
-      //       // TODO
-      //       // camera.position.set(0, -50, 50);
+      let getRandomArbitrary = function (min, max) {
+        return Math.random() * (max - min) + min;
+      };
 
-      //       // change controls
-      //       controls.enabled = false;
+      let createObstacles = function () {
+        // load obstacles
+        const geometryObstacle = new THREE.SphereGeometry(
+          radiusObstacle,
+          32,
+          32
+        );
+        const materialObstacle = new THREE.MeshBasicMaterial({
+          color: "grey",
+        });
+        obstacle = new THREE.Mesh(geometryObstacle, materialObstacle);
+        group.add(obstacle);
+        obstacle.position.set(0, 0, 200);
+      };
 
-      //       // if tactile device
-      //       document.addEventListener("touchmove", function (e) {
-      //         repositionShuttle(e);
-      //         // TODO : block scroll on mobile
-      //       });
+      // game start
+      watch(
+        () => props.isGameEnable,
+        () => {
+          if (props.isGameEnable) {
+            // stopRotationShuttle();
 
-      //       // if computer
-      //       document.addEventListener("mousemove", function (e) {
-      //         repositionShuttle(e);
-      //       });
-      //       // load obstacles
+            group = new THREE.Group();
+            group.add(shuttle);
 
-      //       // make them go toward viewer
+            // camera
+            camera_pivot = new THREE.Group();
+            group.add(camera_pivot);
 
-      //       // if contact, lose
+            // group position
+            sphGroup.set(6700, initLat, initLon);
+            positionGroup.setFromSpherical(sphGroup);
+            group.position.set(
+              positionGroup.x,
+              positionGroup.y,
+              positionGroup.z
+            );
 
-      //       // if not, keep going
-      //     }
-      //   }
-      // );
+            // set shuttle in center and correct orientation
+            shuttle.rotation.z = 0;
+            shuttle.rotation.y = Math.PI;
+            shuttle.position.set(0, 0, 0);
+
+            camera_pivot.rotation.y = 0.15;
+            camera_pivot.rotation.x = 0.1;
+
+            camera_pivot.position.set(0, 0, 0);
+            camera_pivot.add(camera);
+            camera.position.set(0, 0, -100);
+
+            controls.target = group.position;
+
+            // change controls
+            controls.enabled = false;
+
+            document.body.style.position = "fixed";
+            // if tactile device
+            document.addEventListener("touchmove", repositionShuttle);
+
+            // if computer
+            document.addEventListener("mousemove", repositionShuttle);
+
+            scene.add(group);
+
+            shuttleIsTouched = false;
+            score = 0;
+            gameJustStarted = true;
+
+            // make them go toward viewer
+
+            // if contact, lose
+
+            // if not, keep going
+
+            // come back to home
+          } else {
+            document.body.style.position = "unset";
+
+            document.removeEventListener("mousemove", repositionShuttle);
+            document.removeEventListener("mousemove", repositionShuttle);
+
+            alert("Game Over. \n\nScore : " + score.toString());
+
+            group.remove(shuttle);
+            group.remove(camera_pivot);
+            camera_pivot.remove(camera);
+            scene.remove(group);
+
+            scene.add(camera);
+            scene.add(shuttle);
+
+            sphCam.set(initAlt, initLat, initLon);
+            positionCamera.setFromSpherical(sphCam);
+            camera.position.set(
+              positionCamera.x,
+              positionCamera.y,
+              positionCamera.z
+            );
+
+            sphShuttle.set(initAlt - 100, initLat, initLon);
+            positionShuttle.setFromSpherical(sphShuttle);
+            shuttle.position.set(
+              positionShuttle.x,
+              positionShuttle.y,
+              positionShuttle.z
+            );
+            shuttle.rotation.y = Math.PI;
+
+            controls.target = shuttle.position;
+            controls.enabled = true;
+          }
+        }
+      );
     });
 
     return {

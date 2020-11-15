@@ -31,6 +31,7 @@
   <Background
     :isGameEnable="isGameEnable"
     @background-has-loaded="updateSetup"
+    @stop-game="stopGame"
   />
 </template>
 
@@ -100,6 +101,11 @@ export default {
       isGameEnable.value = true;
     };
 
+    let stopGame = function () {
+      isGameEnable.value = false;
+      isMenuVisible.value = true;
+    };
+    
     /**
      * set obj has loaded in the list of object to load and check if everyone
      * is loaded before setting appIsLoading to false
@@ -131,7 +137,8 @@ export default {
       setContactVisible,
       setMenuVisible,
       startGame,
-      updateSetup
+      updateSetup,
+      stopGame
     };
   },
 };

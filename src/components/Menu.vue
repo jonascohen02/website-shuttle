@@ -7,7 +7,7 @@
       <button @click="startGame()" class="button_menu">Play</button>
       <button @click="setInfoVisible()" class="button_menu">Info</button>
       <button @click="setContactVisible()" class="button_menu">Contact</button>
-      <button class="button_menu" @click="toggleMenu()">Home</button>
+      <button @click="toggleMenu()" class="button_menu">Home</button>
     </div>
   </div>
 </template>
@@ -61,12 +61,8 @@ export default {
   left: 0;
 }
 
-#menu {
-  width: 40px;
-  height: 40px;
-}
-
 #menu_icon {
+  font-size: 25px;
   margin: 10px;
   color: white;
   cursor: pointer;
@@ -97,5 +93,4 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
 </style>
