@@ -62,7 +62,7 @@ var userDidNotSeeRules = true;
 const textureLoader = new THREE.TextureLoader();
 
 export default {
-  emits: ["background-has-loaded", "stop-game"],
+  emits: ["backgroundhasloaded", "stopgame"],
   props: {
     isGameEnable: Boolean,
   },
@@ -70,7 +70,7 @@ export default {
     const container = ref(null);
 
     let backgroundProgression = function (obj) {
-      emit("background-has-loaded", obj);
+      emit("backgroundhasloaded", obj);
     };
 
     onMounted(async () => {
@@ -112,10 +112,15 @@ export default {
           normalScale: new THREE.Vector2(0.85, -0.85),
         });
 
-        // sun
         const light = new THREE.AmbientLight(0x404040, 1); // soft white light
         scene.add(light);
 
+        const earthLight = new THREE.PointLight(0xffffff, 1);
+        earthLight.color.setHSL(0.995, 0.5, 0.9);
+        earthLight.position.set(0, 0, radius);
+        scene.add(earthLight);
+
+        // sun
         const textureFlare0 = textureLoader.load("textures/lensflare0.png");
         const sun = new THREE.PointLight(0xffffff, 2);
         sun.color.setHSL(0.995, 0.5, 0.9);
@@ -258,9 +263,8 @@ export default {
 
         backgroundProgression("Stars");
 
-        shuttle;
-
-        const loader = new GLTFLoader().setPath("model/shuttle/");
+        // shuttle
+        const loader = new GLTFLoader().setPath("models/shuttle/");
         loader.load(
           "scene.gltf",
           // success
@@ -276,6 +280,7 @@ export default {
 
             // rotation
             shuttle.rotation.y = Math.PI;
+
             scene.add(shuttle);
 
             controls.target = shuttle.position;
@@ -283,6 +288,20 @@ export default {
             backgroundProgression("Shuttle");
           },
           // called while loading is progressing
+          function () {},
+          function (error) {
+            console.error(error);
+          }
+        );
+
+        const loaderAsteroid = new GLTFLoader().setPath("models/asteroid/");
+        loaderAsteroid.load(
+          "scene.gltf",
+          // success
+          function (gltf) {
+            obstacle = gltf.scene;
+            obstacle.scale.set(0.015, 0.015, 0.015);
+          },
           function () {},
           function (error) {
             console.error(error);
@@ -413,12 +432,12 @@ export default {
                     0.5
                   );
 
-                  // if distance between shuttle and obstacle's center is less than obstacle's radius, there is impact, stop game
+                  // if distance between shuttle and obstacle's center is less than 2 * obstacle's radius, there is impact, stop game
                   if (distance < 2 * radiusObstacle) {
                     shuttleIsTouched = true;
                     group.remove(obstacle);
                     setTimeout(() => {
-                      emit("stop-game");
+                      emit("stopgame");
                     }, 2000);
                   }
                 }
@@ -432,7 +451,8 @@ export default {
                 }
                 // make it come towards the camera
                 obstacle.position.z -= obstacleSpeed;
-                obstacleSpeed += 0.001;
+                // increase the speed of asteroid
+                obstacleSpeed += 0.003;
 
                 // make effects if shuttle is touched
                 if (shuttleIsTouched) {
@@ -452,12 +472,17 @@ export default {
       let min_x = -25;
 
       let repositionShuttle = function (e) {
+        // avoid scroll refresh in android chrome
+        e.preventDefault();
+
+        // 2 ways to get pageX (depends on devices)
+        let pageX = e.pageX || e.changedTouches[0].pageX;
+        let pageY = e.pageY || e.changedTouches[0].pageY;
         shuttle.position.x = -(
           min_x +
-          (e.pageX / SCREEN_WIDTH) * (max_x - min_x)
+          (pageX / SCREEN_WIDTH) * (max_x - min_x)
         );
-        shuttle.position.y =
-          max_y - (e.pageY / SCREEN_HEIGHT) * (max_y - min_y);
+        shuttle.position.y = max_y - (pageY / SCREEN_HEIGHT) * (max_y - min_y);
       };
 
       let getRandomArbitrary = function (min, max) {
@@ -465,18 +490,22 @@ export default {
       };
 
       let createObstacles = function () {
-        // load obstacles
-        const geometryObstacle = new THREE.SphereGeometry(
-          radiusObstacle,
-          32,
-          32
-        );
-        const materialObstacle = new THREE.MeshBasicMaterial({
-          color: "grey",
-        });
-        obstacle = new THREE.Mesh(geometryObstacle, materialObstacle);
+        // realistic asteroids (requires good hardware)
         group.add(obstacle);
         obstacle.position.set(0, 0, 200);
+
+        // spheric simple obstacles
+        // const geometryObstacle = new THREE.SphereGeometry(
+        //   radiusObstacle,
+        //   32,
+        //   32
+        // );
+        // const materialObstacle = new THREE.MeshBasicMaterial({
+        //   color: "grey",
+        // });
+        // obstacle = new THREE.Mesh(geometryObstacle, materialObstacle);
+        // group.add(obstacle);
+        // obstacle.position.set(0, 0, 200);
       };
 
       // game start
@@ -484,8 +513,6 @@ export default {
         () => props.isGameEnable,
         () => {
           if (props.isGameEnable) {
-            // stopRotationShuttle();
-
             group = new THREE.Group();
             group.add(shuttle);
 
@@ -516,37 +543,32 @@ export default {
 
             controls.target = group.position;
 
-            // change controls
+            // disable controls
             controls.enabled = false;
 
-            document.body.style.position = "fixed";
             // if tactile device
-            document.addEventListener("touchmove", repositionShuttle);
+            document.addEventListener("touchmove", repositionShuttle, {
+              passive: false,
+            });
 
             // if computer
-            document.addEventListener("mousemove", repositionShuttle);
+            document.addEventListener("mousemove", repositionShuttle, {
+              passive: false,
+            });
 
             scene.add(group);
 
+            // var initialization
             shuttleIsTouched = false;
             score = 0;
             gameJustStarted = true;
-
-            // make them go toward viewer
-
-            // if contact, lose
-
-            // if not, keep going
-
-            // come back to home
           } else {
-            document.body.style.position = "unset";
-
             document.removeEventListener("mousemove", repositionShuttle);
             document.removeEventListener("mousemove", repositionShuttle);
 
             alert("Game Over. \n\nScore : " + score.toString());
 
+            // remove group and come back to home mode
             group.remove(shuttle);
             group.remove(camera_pivot);
             camera_pivot.remove(camera);
@@ -555,6 +577,7 @@ export default {
             scene.add(camera);
             scene.add(shuttle);
 
+            // set objects'position & orientation
             sphCam.set(initAlt, initLat, initLon);
             positionCamera.setFromSpherical(sphCam);
             camera.position.set(

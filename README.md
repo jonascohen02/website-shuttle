@@ -1,5 +1,12 @@
 # website
 
+Go to [thomas.simmer.free.fr]() to see this project.
+
+3D model sources :
+ - [Shuttle](https://skfb.ly/6R6Iu)
+ - [Asteroids](https://skfb.ly/COwN)
+ - [Earth texture](http://planetpixelemporium.com/planets.html)
+
 ## Project setup
 ```
 npm install

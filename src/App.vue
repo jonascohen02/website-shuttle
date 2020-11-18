@@ -1,6 +1,6 @@
 <template>
   <div v-if="appIsLoading" id="loader">
-    <div class="centered_div">
+    <div class="centered_div height_limited">
       <div
         v-for="(element, key) in listObjectToLoad"
         v-bind:key="key"
@@ -19,19 +19,24 @@
   </div>
   <Menu
     :isMenuVisible="isMenuVisible"
-    @set-info-visible="setInfoVisible"
-    @set-contact-visible="setContactVisible"
-    @start-game="startGame"
+    @setinfovisible="setInfoVisible"
+    @setcontactvisible="setContactVisible"
+    @setcommentsvisible="setCommentsVisible"
+    @startgame="startGame"
   />
-  <Info :isInfoVisible="isInfoVisible" @come-back-to-menu="setMenuVisible" />
+  <Info :isInfoVisible="isInfoVisible" @comebacktomenu="setMenuVisible" />
+  <Comments
+    :isCommentsVisible="isCommentsVisible"
+    @comebacktomenu="setMenuVisible"
+  />
   <Contact
     :isContactVisible="isContactVisible"
-    @come-back-to-menu="setMenuVisible"
+    @comebacktomenu="setMenuVisible"
   />
   <Background
     :isGameEnable="isGameEnable"
-    @background-has-loaded="updateSetup"
-    @stop-game="stopGame"
+    @backgroundhasloaded="updateSetup"
+    @stopgame="stopGame"
   />
 </template>
 
@@ -40,6 +45,7 @@ import Background from "@/components/Background";
 import Menu from "@/components/Menu";
 import Info from "@/components/Info";
 import Contact from "@/components/Contact";
+import Comments from "@/components/Comments";
 
 import { ref } from "vue";
 
@@ -50,11 +56,13 @@ export default {
     Menu,
     Info,
     Contact,
+    Comments,
   },
   setup() {
     let isMenuVisible = ref(true);
     let isInfoVisible = ref(false);
     let isContactVisible = ref(false);
+    let isCommentsVisible = ref(false);
     let isGameEnable = ref(false);
     let listObjectToLoad = ref({
       Sun: false,
@@ -79,6 +87,7 @@ export default {
       isMenuVisible.value = false;
       isInfoVisible.value = false;
       isContactVisible.value = false;
+      isCommentsVisible.value = false;
     };
 
     let setMenuVisible = function () {
@@ -96,6 +105,11 @@ export default {
       isContactVisible.value = true;
     };
 
+    let setCommentsVisible = function () {
+      setAllUnvisible();
+      isCommentsVisible.value = true;
+    };
+
     let startGame = function () {
       setAllUnvisible();
       isGameEnable.value = true;
@@ -105,7 +119,7 @@ export default {
       isGameEnable.value = false;
       isMenuVisible.value = true;
     };
-    
+
     /**
      * set obj has loaded in the list of object to load and check if everyone
      * is loaded before setting appIsLoading to false
@@ -130,15 +144,17 @@ export default {
       isMenuVisible,
       isInfoVisible,
       isContactVisible,
+      isCommentsVisible,
       isGameEnable,
       appIsLoading,
       listObjectToLoad,
       setInfoVisible,
       setContactVisible,
+      setCommentsVisible,
       setMenuVisible,
       startGame,
       updateSetup,
-      stopGame
+      stopGame,
     };
   },
 };
@@ -165,12 +181,13 @@ body,
 /* Block scroll in ios */
 body,
 html {
-  /* position: fixed; */
+  position: fixed;
 }
 
 .central_text {
   color: white;
-  margin: 20px;
+  min-width: 0;
+  height: 100%;
 }
 
 #loader {
@@ -228,15 +245,20 @@ html {
 }
 
 .loaded {
-  background-image: url(/icons/done_icon.png);
+  background-image: url("/textures/done_icon.png");
   width: 17px;
   height: 17px;
   background-size: 100%;
 }
 
 .centered_div {
-  height: 300px;
+  height: 100%;
   display: grid;
-  width: 100%;
+  width: calc(100% - 40px);
+  max-width: 450px;
+}
+
+.height_limited {
+  max-height: 300px;
 }
 </style>
