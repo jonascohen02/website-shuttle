@@ -190,6 +190,12 @@ html {
   height: 100%;
 }
 
+@media (max-width: 470px) {
+  .central_text {
+    font-size: 3vw;
+  }
+}
+
 #loader {
   position: absolute;
   top: 0;

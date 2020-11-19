@@ -177,13 +177,6 @@ export default {
   scrollbar-width: none; /* Firefox */
 }
 
-@media (max-width: 500px) {
-  #container_comments {
-    height: 50%;
-    max-height: 200px;
-  }
-}
-
 /* Hide scrollbar for Chrome, Safari and Opera */
 #container_comments::-webkit-scrollbar {
   display: none;
@@ -200,6 +193,15 @@ export default {
 
 .comments {
   align-items: unset;
+}
+
+.comments .centered_div{
+  grid-template-rows: 85% 15%;
+}
+
+.comments .central_text{
+  grid-template-rows: 65px auto 20px 150px;
+  display: grid;
 }
 
 .form_field {
