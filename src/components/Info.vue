@@ -9,8 +9,8 @@
         <br />
         <br />
         The aim of this website was to learn
-        <a href="https://v3.vuejs.org/">Vue3</a> and
-        <a href="https://threejs.org/">Three.js</a>.
+        <a href="https://v3.vuejs.org/" target="_blank">Vue3</a> and
+        <a href="https://threejs.org/" target="_blank">Three.js</a>.
         <br />
         <br />
         Find the code of this project
@@ -30,7 +30,7 @@
         <br />
         <br />
         You want to support my development ?
-        <a href="paypal.me/ThomasSimmer">Why not ?</a>
+        <a href="https://www.paypal.com/paypalme/ThomasSimmer" target="_blank">Why not ?</a>
         <br />
         <br />
         This website was visited {{ visits }} times.

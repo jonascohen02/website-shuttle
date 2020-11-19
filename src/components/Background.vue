@@ -562,6 +562,7 @@ export default {
             shuttleIsTouched = false;
             score = 0;
             gameJustStarted = true;
+            obstacleSpeed = 5;
           } else {
             document.removeEventListener("mousemove", repositionShuttle);
             document.removeEventListener("mousemove", repositionShuttle);

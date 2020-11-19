@@ -82,7 +82,9 @@ export default {
               let foundId = element[0];
               let foundDate = element[1];
               let foundUsername = element[2];
-              let foundMessage = element[3];
+              let foundMessage = element.slice(3, element.length);
+
+              foundMessage = foundMessage.join();
 
               // date formatting
               var t = foundDate.split(/[- :]/);
