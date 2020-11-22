@@ -509,13 +509,13 @@
   ],
   "images": [
     {
-      "uri": "Metal_Base_baseColor.jpg"
+      "uri": "Metal_Base_baseColor.jpeg"
     },
     {
-      "uri": "Metal_Base_metallicRoughness.jpg"
+      "uri": "Metal_Base_metallicRoughness.png"
     },
     {
-      "uri": "Metal_Base_normal.jpg"
+      "uri": "Metal_Base_normal.png"
     },
     {
       "uri": "Cristal_baseColor.png"
@@ -527,22 +527,22 @@
       "uri": "Cristal_normal.png"
     },
     {
-      "uri": "Coraza_baseColor.jpg"
+      "uri": "Coraza_baseColor.jpeg"
     },
     {
-      "uri": "Coraza_metallicRoughness.jpg"
+      "uri": "Coraza_metallicRoughness.png"
     },
     {
-      "uri": "Coraza_normal.jpg"
+      "uri": "Coraza_normal.png"
     },
     {
       "uri": "Metal_Detalle_baseColor.jpeg"
     },
     {
-      "uri": "Metal_Detalle_metallicRoughness.jpg"
+      "uri": "Metal_Detalle_metallicRoughness.png"
     },
     {
-      "uri": "Metal_Detalle_normal.jpg"
+      "uri": "Metal_Detalle_normal.png"
     }
   ],
   "materials": [
