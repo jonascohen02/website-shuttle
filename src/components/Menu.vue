@@ -97,7 +97,7 @@ export default {
 }
 
 #menu_icon span:first-child {
-  margin-top: 6px;
+  margin-top: 7px;
 }
 #menu_icon span:last-child {
   margin-bottom: 0px;

@@ -1,5 +1,12 @@
 <template>
-  <div id="container" ref="container"></div>
+  <div id="container" ref="container">
+    <div v-if="enablegamewindow" id="game_msg_window">
+      <span>{{ game_window_msg }}</span>
+      <button @click.stop="gameButtonHandler()" class="button_menu">
+        {{ game_button_msg }}
+      </button>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -68,9 +75,16 @@ export default {
   },
   setup(props, { emit }) {
     const container = ref(null);
+    var game_window_msg = ref("");
+    var game_button_msg = ref("");
+    var enablegamewindow = ref(false);
 
     let backgroundProgression = function (obj) {
       emit("backgroundhasloaded", obj);
+    };
+
+    let gameButtonHandler = function () {
+      enablegamewindow.value = false;
     };
 
     onMounted(async () => {
@@ -343,6 +357,24 @@ export default {
         render();
       }
 
+      // return a promise, solved when user press on game window button
+      function listenForGameButtonPress() {
+        return new Promise((resolve) => {
+          function listenerFunction() {
+            setTimeout(() => {
+              // if window was closed
+              if (!enablegamewindow.value) {
+                resolve();
+              } else {
+                listenerFunction();
+              }
+            }, 200);
+          }
+
+          listenerFunction();
+        });
+      }
+
       function render() {
         // rotate the planet and clouds
         const delta = 1;
@@ -402,8 +434,13 @@ export default {
             if (userDidNotSeeRules) {
               if (!timeOutTriggered) {
                 timeOutTriggered = true;
-                setTimeout(() => {
-                  alert("Stay alive, avoid the meteorites.");
+                setTimeout(async () => {
+                  enablegamewindow.value = true;
+                  game_window_msg.value = "Stay alive, avoid the meteorites.";
+                  game_button_msg.value = "Start";
+
+                  await listenForGameButtonPress();
+
                   userDidNotSeeRules = false;
                   timeOutTriggered = false;
                   createObstacles();
@@ -436,7 +473,14 @@ export default {
                   if (distance < 2 * radiusObstacle) {
                     shuttleIsTouched = true;
                     group.remove(obstacle);
-                    setTimeout(() => {
+                    setTimeout(async () => {
+                      enablegamewindow.value = true;
+                      game_window_msg.value =
+                        "Game Over. \n\nScore : " + score.toString();
+                      game_button_msg.value = "Return";
+
+                      await listenForGameButtonPress();
+
                       emit("stopgame");
                     }, 2000);
                   }
@@ -445,8 +489,8 @@ export default {
                 // put it back at front if behind camera
                 if (obstacle.position.z < -100) {
                   obstacle.position.z = 200;
-                  obstacle.position.x = 0.5 * getRandomArbitrary(min_x, max_x);
-                  obstacle.position.y = 0.5 * getRandomArbitrary(min_y, max_y);
+                  obstacle.position.x = getRandomArbitrary(min_x, max_x);
+                  obstacle.position.y = getRandomArbitrary(min_y, max_y);
                   score++;
                 }
                 // make it come towards the camera
@@ -462,7 +506,6 @@ export default {
             }
           }
         }
-
         renderer.render(scene, camera);
       }
 
@@ -478,11 +521,16 @@ export default {
         // 2 ways to get pageX (depends on devices)
         let pageX = e.pageX || e.changedTouches[0].pageX;
         let pageY = e.pageY || e.changedTouches[0].pageY;
+
+        // position
         shuttle.position.x = -(
           min_x +
           (pageX / SCREEN_WIDTH) * (max_x - min_x)
         );
         shuttle.position.y = max_y - (pageY / SCREEN_HEIGHT) * (max_y - min_y);
+
+        // rotation
+        shuttle.rotation.z = -Math.PI / 2 + (pageX / SCREEN_WIDTH) * Math.PI;
       };
 
       let getRandomArbitrary = function (min, max) {
@@ -567,8 +615,6 @@ export default {
             document.removeEventListener("mousemove", repositionShuttle);
             document.removeEventListener("mousemove", repositionShuttle);
 
-            alert("Game Over. \n\nScore : " + score.toString());
-
             // remove group and come back to home mode
             group.remove(shuttle);
             group.remove(camera_pivot);
@@ -605,10 +651,28 @@ export default {
 
     return {
       container,
+      enablegamewindow,
+      game_window_msg,
+      game_button_msg,
+      gameButtonHandler,
     };
   },
 };
 </script>
 
 <style>
+#game_msg_window {
+  display: grid;
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 100px;
+  width: 300px;
+  background: rgb(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 5%;
+  padding-top: 30px;
+}
 </style>
