@@ -68,7 +68,7 @@ export default {
 
     let getComments = function () {
       axios
-        .get("/comments.php")
+        .get("http://thomas.simmer.free.fr/comments.php")
         .then(function (response) {
           let newListComments = {};
 
@@ -132,7 +132,7 @@ export default {
 
       axios({
         method: "post",
-        url: "/comments.php",
+        url: "http://thomas.simmer.free.fr/comments.php",
         data: formData,
         config: { headers: { "Content-Type": "multipart/form-data" } },
       })

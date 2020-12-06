@@ -251,7 +251,7 @@ html {
 }
 
 .loaded {
-  background-image: url("/textures/done_icon.png");
+  background-image: url("./img/done_icon.png");
   width: 17px;
   height: 17px;
   background-size: 100%;

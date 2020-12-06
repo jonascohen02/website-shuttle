@@ -278,9 +278,9 @@ export default {
         backgroundProgression("Stars");
 
         // shuttle
-        const loader = new GLTFLoader().setPath("models/shuttle/");
+        const loader = new GLTFLoader();
         loader.load(
-          "scene.gltf",
+          "models/shuttle/scene.gltf",
           // success
           function (gltf) {
             shuttle = gltf.scene;
@@ -308,9 +308,8 @@ export default {
           }
         );
 
-        const loaderAsteroid = new GLTFLoader().setPath("models/asteroid/");
-        loaderAsteroid.load(
-          "scene.gltf",
+        loader.load(
+          "models/asteroid/scene.gltf",
           // success
           function (gltf) {
             obstacle = gltf.scene;

@@ -66,7 +66,7 @@ export default {
 
       axios({
         method: "post",
-        url: "/mail.php",
+        url: "http://thomas.simmer.free.fr/mail.php",
         data: formData,
         config: { headers: { "Content-Type": "multipart/form-data" } },
       })
